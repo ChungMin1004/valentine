@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Happy Valentine 💛</title>
+  <style>
+    :root { --bg1:#0f1020; --bg2:#1b1d3a; --accent:#ff4d6d; --accent2:#ffd166; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
+      color: #fff;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(1200px 800px at 70% 20%, rgba(255,77,109,.28), transparent 60%),
+                  radial-gradient(900px 600px at 20% 80%, rgba(255,209,102,.18), transparent 55%),
+                  linear-gradient(160deg, var(--bg1), var(--bg2));
+      overflow: hidden;
+    }
+    .card {
+      width: min(720px, 92vw);
+      padding: 28px 22px 26px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 18px 60px rgba(0,0,0,0.35);
+      text-align: center;
+      position: relative;
+    }
+    h1 {
+      margin: 10px 0 8px;
+      font-size: clamp(22px, 3.5vw, 34px);
+      letter-spacing: -0.02em;
+    }
+    p { margin: 0 0 16px; opacity: .9; }
+    .hero {
+      width: min(520px, 92%);
+      aspect-ratio: 16/9;
+      border-radius: 18px;
+      margin: 14px auto 20px;
+      overflow: hidden;
+      position: relative;
+      background: rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.12);
+      display: grid;
+      place-items: center;
+    }
+    .hero img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none; /* 이미지 넣으면 JS에서 show */
+    }
+    .hero .placeholder {
+      padding: 18px 16px;
+      line-height: 1.35;
+      opacity: .92;
+    }
+    .hero .placeholder strong { color: var(--accent2); }
+
+    .btns {
+      position: relative;
+      height: 140px; /* 아니 버튼이 도망갈 공간 */
+      display: grid;
+      place-items: center;
+      gap: 12px;
+    }
+    button {
+      border: 0;
+      padding: 14px 18px;
+      border-radius: 999px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .08s ease, filter .12s ease;
+      user-select: none;
+    }
+    button:active { transform: scale(.98); }
+    .yes {
+      background: linear-gradient(135deg, var(--accent), #ff8fab);
+      color: #fff;
+      box-shadow: 0 10px 30px rgba(255,77,109,.25);
+      min-width: 170px;
+    }
+    .no {
+      position: absolute; /* 도망용 */
+      background: rgba(255,255,255,0.14);
+      color: rgba(255,255,255,0.95);
+      border: 1px solid rgba(255,255,255,0.18);
+      min-width: 120px;
+      left: 50%;
+      top: 55%;
+      transform: translate(-50%, -50%);
+      backdrop-filter: blur(8px);
+    }
+    .no:hover { filter: brightness(1.1); }
+
+    .result {
+      margin-top: 14px;
+      font-size: 18px;
+      font-weight: 700;
+      min-height: 28px;
+    }
+
+    /* 하트 파티클 */
+    .heart {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      font-size: 22px;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      animation: pop 1.2s ease-out forwards;
+      text-shadow: 0 10px 25px rgba(0,0,0,.35);
+    }
+    @keyframes pop {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(.6); }
+      10% { opacity: 1; }
+      100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.3); }
+    }
+
+    .small {
+      margin-top: 8px;
+      font-size: 12px;
+      opacity: .65;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>💛 사랑해</h1>
+    <p>발렌타인데이 기념… 나랑 평생 같이 있어줄래?</p>
+
+    <div class="hero" id="hero">
+      <!-- assets 폴더에 love.jpg 넣으면 자동 표시됨 -->
+      <img id="heroImg" alt="love image" />
+      <div class="placeholder" id="ph">
+        여기 이미지 넣고 싶으면<br/>
+        <strong>assets/love.jpg</strong> 파일을 레포에 추가해줘 🙂<br/>
+        (없어도 이 페이지는 동작해!)
+      </div>
+    </div>
+
+    <div class="btns" id="arena">
+      <button class="yes" id="yesBtn">나도 사랑해 💘</button>
+      <button class="no" id="noBtn">아니 🙅‍♀️</button>
+    </div>
+
+    <div class="result" id="result"></div>
+  </div>
+
+  <script>
+    // 1) 이미지 자동 로드 (있으면 보여주고, 없으면 placeholder 유지)
+    (function tryLoadImage() {
+      const img = document.getElementById("heroImg");
+      const ph = document.getElementById("ph");
+      const url = "assets/love.jpg"; // 여기에 이미지 파일 넣기
+      img.src = url;
+      img.onload = () => { img.style.display = "block"; ph.style.display = "none"; };
+      img.onerror = () => { /* 이미지 없어도 OK */ };
+    })();
+
+    const arena = document.getElementById("arena");
+    const noBtn = document.getElementById("noBtn");
+    const yesBtn = document.getElementById("yesBtn");
+    const result = document.getElementById("result");
+
+    // 2) "아니" 버튼 도망 로직
+    function moveNoButton() {
+      const pad = 10;
+      const a = arena.getBoundingClientRect();
+      const b = noBtn.getBoundingClientRect();
+
+      const maxX = a.width - b.width - pad;
+      const maxY = a.height - b.height - pad;
+
+      // 랜덤 위치
+      const x = pad + Math.random() * Math.max(0, maxX - pad);
+      const y = pad + Math.random() * Math.max(0, maxY - pad);
+
+      noBtn.style.left = x + "px";
+      noBtn.style.top  = y + "px";
+      noBtn.style.transform = "translate(0,0)";
+    }
+
+    // 마우스가 근처 오면 도망 (hover + 근접 감지)
+    noBtn.addEventListener("mouseenter", moveNoButton);
+    noBtn.addEventListener("touchstart", (e) => { e.preventDefault(); moveNoButton(); }, {passive:false});
+
+    // 근접 감지 (조금 더 “도망감” 강화)
+    arena.addEventListener("mousemove", (e) => {
+      const nb = noBtn.getBoundingClientRect();
+      const distX = Math.abs(e.clientX - (nb.left + nb.width/2));
+      const distY = Math.abs(e.clientY - (nb.top + nb.height/2));
+      if (distX < 90 && distY < 55) moveNoButton();
+    });
+
+    // 3) "나도 사랑해" 클릭 이벤트
+    function spawnHearts(count = 22) {
+      const hearts = ["💛","💖","💘","💕","💞","💓","❤️"];
+      for (let i=0; i<count; i++) {
+        const el = document.createElement("div");
+        el.className = "heart";
+        el.textContent = hearts[Math.floor(Math.random()*hearts.length)];
+        el.style.setProperty("--dx", (Math.random()*520 - 260) + "px");
+        el.style.setProperty("--dy", (Math.random()*520 - 260) + "px");
+        el.style.fontSize = (18 + Math.random()*22) + "px";
+        el.style.left = (50 + (Math.random()*20 - 10)) + "%";
+        el.style.top  = (50 + (Math.random()*20 - 10)) + "%";
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 1300);
+      }
+    }
+
+    yesBtn.addEventListener("click", () => {
+      result.textContent = "🥰 나도 사랑해… 오늘은 내가 더 많이 사랑할게.";
+      spawnHearts(28);
+    });
+
+    // 처음 접속 시 "아니" 버튼 살짝 랜덤 배치
+    moveNoButton();
+  </script>
+</body>
+</html>
